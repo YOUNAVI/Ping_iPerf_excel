@@ -71,7 +71,7 @@ def iperfilinglinux(filename, commandline) :
 
     border_thick = Side(border_style='thin')
     for i in range(lastindex + 2, lastindex + 5):
-        ws.merge_cells(start_row = i, start_column = 2, end_row = i, end_column = 8)
+        ws.merge_cells(start_row = i, start_column = 2, end_row = i, end_column = 9)
         ws.cell(row = i, column = 1).border = Border(left = border_thick, right = border_thick, top = border_thick, bottom = border_thick)
         ws.cell(row = i, column = 1).font = Font(bold = True)
 
