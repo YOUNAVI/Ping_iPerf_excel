@@ -5,6 +5,7 @@ from datetime import datetime
 from pingresult import pingfiling
 from pingresultlinux import pingfilinglinux
 from iperfresult import iperfiling, iperfiling_udp
+from iperfresultlinux import iperfilinglinux, iperfilinglinux_udp
 
 if __name__ == '__main__':
     if platform.system() == 'Windows':
@@ -42,12 +43,18 @@ if __name__ == '__main__':
             if platform.system() == 'Windows':
                 pingfiling(filename = filename, commandline = command_line)
 
-            elif platform.system == 'Linux':
+            elif platform.system() == 'Linux':
                 pingfilinglinux(filename = filename, commandline = command_line)
         elif command_list[0] == 'iperf3' or 'iperf':
             if command_list.__contains__('-u'):
-                iperfiling_udp(filename = filename, commandline = command_line)
+                if platform.system() == 'Windows':
+                    iperfiling_udp(filename = filename, commandline = command_line)
+                elif platform.system() == 'Linux':
+                    iperfilinglinux_udp(filename = filename, commandline = command_line)
             else:
-                iperfiling(filename = filename, commandline = command_line)
+                if platform.system() == 'Windows':
+                    iperfiling(filename = filename, commandline = command_line)
+                elif platform.system() == 'Linux':
+                    iperfilinglinux(filename = filename, commandline = command_line)
 
         print(f"filesaved: {filename}")
