@@ -3,6 +3,7 @@ import subprocess
 import platform
 from datetime import datetime
 from pingresult import pingfiling
+from pingresultlinux import pingfilinglinux
 from iperfresult import iperfiling, iperfiling_udp
 
 if __name__ == '__main__':
@@ -17,13 +18,14 @@ if __name__ == '__main__':
     while(1):
         print("주의사항: tee, >, '> hello.txt', logfile, output 등 파일로 출력하는 옵션을 절대 주지 마십시오.")
         cwd = str(os.getcwd())
-        command_line = input(f"Python: {cwd}>")
+        command_line = input(f"Python: {cwd}> ")
         command_list = command_line.split(' ')
         now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         filename = f"{command_list[0]}_{now}_result"
 
         if command_list[0] == 'iperf3' or command_list[0] == 'iperf':
-            data = subprocess.Popen(command_list.append("--forceflush"), stdout=subprocess.PIPE, encoding='euc-kr')
+            command_list.append("--forceflush")
+            data = subprocess.Popen(command_list, stdout=subprocess.PIPE, encoding='euc-kr')
         else:
             data = subprocess.Popen(command_list, stdout=subprocess.PIPE, encoding='euc-kr')
 
@@ -37,7 +39,11 @@ if __name__ == '__main__':
         f.close()
 
         if command_list[0] == 'ping':
-            pingfiling(filename = filename, commandline = command_line)
+            if platform.system() == 'Windows':
+                pingfiling(filename = filename, commandline = command_line)
+
+            elif platform.system == 'Linux':
+                pingfilinglinux(filename = filename, commandline = command_line)
         elif command_list[0] == 'iperf3' or 'iperf':
             if command_list.__contains__('-u'):
                 iperfiling_udp(filename = filename, commandline = command_line)
