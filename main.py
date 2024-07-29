@@ -23,9 +23,9 @@ if __name__ == '__main__':
         filename = f"{command_list[0]}_{now}_result"
 
         if command_list[0] == 'iperf3' or command_list[0] == 'iperf':
-            data = subprocess.Popen(command_line + " --forceflush", stdout=subprocess.PIPE, encoding='euc-kr')
+            data = subprocess.Popen(command_list.append("--forceflush"), stdout=subprocess.PIPE, encoding='euc-kr')
         else:
-            data = subprocess.Popen(command_line, stdout=subprocess.PIPE, encoding='euc-kr')
+            data = subprocess.Popen(command_list, stdout=subprocess.PIPE, encoding='euc-kr')
 
         f = open(filename + ".txt", 'w', encoding="utf-8")
         f.write(command_line)
