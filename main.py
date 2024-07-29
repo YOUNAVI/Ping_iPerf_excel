@@ -10,7 +10,7 @@ if __name__ == '__main__':
     if platform.system() == 'Windows':
         os.system("cls")
 
-    elif platform.system == 'Linux':
+    elif platform.system() == 'Linux':
         os.system("clear")
 
     os.makedirs("results", exist_ok=True)
