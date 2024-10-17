@@ -91,12 +91,12 @@ def hrpingfiling(filename, commandline):
             ws[i + str(cell + 1)].alignment = Alignment(horizontal = 'center')
             if type(ws[i + str(cell + 1)].value) == str:
                 try:
-                    try:
-                        ws[i + str(cell + 1)].value = int(ws[i + str(cell + 1)].value)
-                    except:
-                        ws[i + str(cell + 1)].value = float(ws[i + str(cell + 1)].value)
+                    ws[i + str(cell + 1)].value = int(ws[i + str(cell + 1)].value)
                 except:
-                    continue
+                    try:
+                        ws[i + str(cell + 1)].value = float(ws[i + str(cell + 1)].value)
+                    except:
+                        continue
 
     for i in range(1, ws.max_row + 1):
         for j in range(1, ws.max_column + 1):

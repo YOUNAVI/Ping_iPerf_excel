@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import sys
 import re
 import shutil
 from openpyxl import load_workbook
@@ -13,30 +14,45 @@ def pingfiling(filename, commandline):
     fread = open(filename + '.txt', 'r', encoding='utf-8')
     fwrite = open(filename + '_' + 'temp.txt', 'w', encoding='utf-8')
 
-    fwrite.write("byte,time(ms),TTL\n")
+    fwrite.write("time(ms),-,--\n")
     fread.seek(0)
-    lines = len(fread.readlines())
     fread.seek(0)
 
-    for i, v in enumerate(fread.readlines()):
-        if (v.__contains__("만료")):
-            fwrite.write(',' + v.strip('\n') + ',\n')
+    while(1):
+        v = fread.readline()
 
-        if len(re.findall(r'\d+', v)) == 7:
-            fwrite.write(','.join(re.findall(r'\d+', v)[4:]) + "\n")
+        if v.__contains__("만료") or v.__contains__("timed out"):
+            fwrite.write("timeout,,\n")
+        elif v.__contains__("연결할 수 없습니다") or v.__contains__("failed") or v.__contains__("unreachable"):
+            fwrite.write("unreachable,,\n")
+        elif v.__contains__("시간") or v.__contains__("Reply from"):
+            v = arrange_time(v)
+            fwrite.write(v + ",,\n")
+        elif v == "\n":
+            break
+        elif v == "":
+            sys.exit()
+        
+    while(1):
+        v = fread.readline()
 
-        if (v.__contains__("통계")):
-            fwrite.write("all,receive,loss\n")
-
-        if (v.__contains__("보냄")):
-            fwrite.write(','.join(re.findall(r'\d+', v)[:3]) + "\n")
-
-        if (v.__contains__("왕복")):
+        if v.__contains__("보냄") or v.__contains__("Sent"):
+            v = arrange(v)
+            fwrite.write("send,receive,loss\n")
+            fwrite.write(','.join(v[:3]) + '\n')
+        
+        elif v.__contains__("최소") or v.__contains__("Minimum"):
+            v = arrange(v)
             fwrite.write("min,max,avg\n")
+            fwrite.write(','.join(v[:3]) + '\n')
 
-        if (v.__contains__("최소")):
-            fwrite.write(','.join(re.findall(r'\d+', v)[:3]) + "\n")
-            
+        elif v == "\n":
+            break
+
+        elif v == "":
+            break
+
+
     fwrite.close()
     fread.close()
 
@@ -47,18 +63,20 @@ def pingfiling(filename, commandline):
     wb = load_workbook(filename + '.xlsx', data_only=True)
     ws = wb['Sheet1']
 
-    border_thick = Side(border_style='thin')
+    border_thin = Side(border_style='thin')
+    all_border_thin = Border(left = border_thin, right = border_thin, top = border_thin, bottom = border_thin)
+    lines = len(df)
 
-    for i in range(lines - 1, lines + 2):
-        ws.merge_cells(start_row = i, start_column = 2, end_row = i, end_column = 6)
-        ws.cell(row = i, column = 1).border = Border(left = border_thick, right = border_thick, top = border_thick, bottom = border_thick)
+    for i in range(lines + 2, lines + 5):
+        ws.merge_cells(start_row = i, start_column = 2, end_row = i, end_column = 4)
+        ws.cell(row = i, column = 1).border = all_border_thin
         ws.cell(row = i, column = 1).font = Font(bold = True)
 
-    ws.cell(row = lines - 1, column = 1).value = "CMD"
-    ws.cell(row = lines, column = 1).value = "일시"
-    ws.cell(row = lines + 1, column = 1).value = "비고"
-    ws.cell(row = lines - 1, column = 2).value = commandline
-    ws.cell(row = lines, column = 2).value = date + ' ' + time
+    ws.cell(row = lines + 2, column = 1).value = "CMD"
+    ws.cell(row = lines + 3, column = 1).value = "일시"
+    ws.cell(row = lines + 4, column = 1).value = "비고"
+    ws.cell(row = lines + 2, column = 2).value = commandline
+    ws.cell(row = lines + 3, column = 2).value = date + ' ' + time
 
     for i in ['A', 'B', 'C', 'D']:
         for cell in range(len(ws[i])):
@@ -69,12 +87,37 @@ def pingfiling(filename, commandline):
                 except:
                     continue
 
+    for i in range(1, ws.max_row + 1):
+        for j in range(1, ws.max_column + 1):
+            ws.cell(row = i, column = j).border = all_border_thin
+
+    ws['C1'].value = ''
+    ws['D1'].value = ''
+
     wb.save('results/' + filename + '.xlsx')
     os.makedirs('results/txt', exist_ok=True)
     shutil.move(filename + '.txt', 'results/txt')
     os.remove(filename + '_' + 'temp.txt')
     os.remove(filename + '.xlsx')
 
+def arrange(line):
+    try:
+        result = re.findall(r'\d+', line)
+    
+    except:
+        result = ['0' for _ in range(4)]
+
+    return result
+
+def arrange_time(line):
+    try:
+        line_tmp = line.split("시간")[1] # change "시간" to "time" if you use not KR, but EN
+        result = re.findall(r'\d+', line_tmp)[0]
+
+    except:
+        result = "no data"
+
+    return result
 
 if __name__ == "__main__":
-    pingfiling("test", commandline="ping google.com -n 5")
+    pingfiling("test", commandline="ping google.com -n 10")

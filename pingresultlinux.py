@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import sys
 import re
 import shutil
 from openpyxl import load_workbook
@@ -13,44 +14,43 @@ def pingfilinglinux(filename, commandline):
     fread = open(filename + '.txt', 'r', encoding='utf-8')
     fwrite = open(filename + '_' + 'temp.txt', 'w', encoding='utf-8')
 
-    fwrite.write("seq,TTL,time(ms)\n")
+    fwrite.write("time(ms),-,--\n")
     fread.seek(0)
 
-    for i, v in enumerate(fread.readlines()):
-        if (v.__contains__("Unreachable")):
-            try:
-                fwrite.write(re.findall(r'\d+', v)[-1] + ',unreachable' + ',\n')
-            except:
-                continue
+    while(1):
+        v = fread.readline()
+
+        if v.__contains__("timed out") or v.__contains__("timeout"):
+            fwrite.write("timeout,,\n")
+        elif v.__contains__("Unreachable") or v.__contains__("unreachable") or v.__contains__("fail"):
+            fwrite.write("unreachable,,\n")
+        elif v.__contains__("bytes from"):
+            v = arrange_time(v)
+            fwrite.write(v + ",,\n")
+        elif v == "\n":
+            break
+        elif v == "":
+            sys.exit()
+
+    while(1):
+        v = fread.readline()
+
+        if v.__contains__("transmitted"):
+            v = arrange(v)
+            fwrite.write("send,receive,loss\n")
+            fwrite.write(','.join(v[:3]) + '\n')
         
-        if (v.__contains__("exceeeded")):
-            try:
-                fwrite.write(re.findall(r'\d+', v)[-1] + ',timeout' + ',\n')
-            except:
-                continue
+        elif v.__contains__("rtt"):
+            v = arrange(v)
+            fwrite.write("min,max,avg\n")
+            fwrite.write(','.join(v[:3]) + '\n')
 
-        if(v.__contains__("ttl")):
-            try:
-                fwrite.write(','.join(re.findall(r'[0-9.]+', v)[-3:]) + '\n')
-            except:
-                continue
+        elif v == "\n":
+            break
 
-        if (v.__contains__("statistics")):
-            fwrite.write("all,receive,loss\n")
+        elif v == "":
+            break
 
-        if (v.__contains__("transmitted")):
-            try:
-                fwrite.write(','.join(re.findall(r'[0-9.]+', v)[:3]) + "\n")
-            except:
-                continue
-
-        if (v.__contains__("rtt")):
-            try:
-                fwrite.write("min,avg,max\n")
-                fwrite.write(','.join(re.findall(r'[0-9.]+', v)[:3]) + "\n")
-            except:
-                continue
-            
     fwrite.close()
     fread.close()
 
@@ -58,16 +58,16 @@ def pingfilinglinux(filename, commandline):
     df.index += 1
     df.to_excel(filename + '.xlsx', index = True)
 
-    lastindex = df.index[-1]
-
     wb = load_workbook(filename + '.xlsx', data_only=True)
     ws = wb['Sheet1']
 
-    border_thick = Side(border_style='thin')
+    border_thin = Side(border_style='thin')
+    all_border_thin = Border(left = border_thin, right = border_thin, top = border_thin, bottom = border_thin)
+    lastindex = df.index[-1]
 
     for i in range(lastindex + 2, lastindex + 5):
-        ws.merge_cells(start_row = i, start_column = 2, end_row = i, end_column = 6)
-        ws.cell(row = i, column = 1).border = Border(left = border_thick, right = border_thick, top = border_thick, bottom = border_thick)
+        ws.merge_cells(start_row = i, start_column = 2, end_row = i, end_column = 4)
+        ws.cell(row = i, column = 1).border = all_border_thin
         ws.cell(row = i, column = 1).font = Font(bold = True)
 
     ws.cell(row = lastindex + 2, column = 1).value = "CMD"
@@ -88,12 +88,34 @@ def pingfilinglinux(filename, commandline):
                     except:
                         continue
 
+    for i in range(1, ws.max_row + 1):
+        for j in range(1, ws.max_column + 1):
+            ws.cell(row = i, column = j).border = all_border_thin
+
+    ws['C1'].value = ''
+    ws['D1'].value = ''
+
     wb.save('results/' + filename + '.xlsx')
     os.makedirs('results/txt', exist_ok=True)
     shutil.move(filename + '.txt', 'results/txt')
     os.remove(filename + '_' + 'temp.txt')
     os.remove(filename + '.xlsx')
 
+def arrange_time(line):
+    try:
+        result = re.findall(r'\d+(?:\.\d+)*', line)[-1]
+    except:
+        result = "no data"
+
+    return result
+
+def arrange(line):
+    try:
+        result = re.findall(r'\d+\.?\d*', line)
+    except:
+        result = ["0", "0", "0", "0"]
+
+    return result
 
 if __name__ == "__main__":
     pingfilinglinux("test", commandline="ping google.com -c 5")
