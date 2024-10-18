@@ -14,7 +14,6 @@ def iperfiling(filename, commandline) :
     fwrite = open(filename + '_' + 'temp.txt', 'w', encoding='utf-8')
 
     fwrite.write("interval,sec,transfer,bytes,bitrate,bits/sec,remarks\n")
-    fread.seek(0)
 
     while(1):
         v = fread.readline()
@@ -99,7 +98,6 @@ def iperfiling_udp(filename, commandline) :
     fwrite = open(filename + '_' + 'temp.txt', 'w', encoding='utf-8')
 
     fwrite.write("interval,sec,transfer,bytes,bitrate,bits/sec,total,remarks\n")
-    fread.seek(0)
 
     while(1):
         v = fread.readline()
