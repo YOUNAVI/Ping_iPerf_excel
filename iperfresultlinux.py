@@ -119,7 +119,7 @@ def iperfilinglinux_udp(filename, commandline) :
 
         if v.__contains__("sender") or v.__contains__("receiver"):
             v = arrange(v)
-            fwrite.write(','.join(v[1:8]) + ',-,' + v[-1] + '\n')
+            fwrite.write(','.join(v[1:8]) + ',' + v[-1] + '\n')
         elif v == "\n":
             break
         elif v == "":
