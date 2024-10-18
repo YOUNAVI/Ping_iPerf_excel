@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import sys
 import shutil
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Border, Side, Font
@@ -14,42 +15,56 @@ def iperfiling(filename, commandline) :
 
     fwrite.write("interval,sec,transfer,bytes,bitrate,bits/sec,remarks\n")
     fread.seek(0)
-    lines = len(fread.readlines())
-    fread.seek(0)
 
-    for i, v in enumerate(fread.readlines()):
-        v = arrange(v)
-        if len(v) == 7:
-            fwrite.write(','.join(v[1:]) + '\n')
+    while(1):
+        v = fread.readline()
 
-        if i == lines - 4:
+        if v.__contains__("sec"):
+            v = arrange(v)
+            fwrite.write(','.join(v[1:7]) + ',\n')
+        elif v.__contains__("- - -") or v.__contains__("---"):
             fwrite.write('-,-,-,-,-,-,-\n')
+            break        
+        elif v == "\n":
+            break
+        elif v == "":
+            sys.exit()
 
-        if v.__contains__('sender') or v.__contains__('receiver'):
-            fwrite.write(','.join(v[1:]) + '\n')
-            
+    while(1):
+        v = fread.readline()
+
+        if v.__contains__("sender") or v.__contains__("receiver"):
+            v = arrange(v)
+            fwrite.write(','.join(v[1:8]) + '\n')
+        elif v == "\n":
+            break
+        elif v == "":
+            break
+        
     fwrite.close()
     fread.close()
 
-    df = pd.read_csv(filename+ '_temp.txt', sep=',', encoding='utf-8', header=0)
+    df = pd.read_csv(filename + '_temp.txt', sep = ',', encoding = 'utf-8', header = 0)
     df.index += 1
     df.to_excel(filename + '.xlsx', index = True)
 
     wb = load_workbook(filename + '.xlsx', data_only=True)
     ws = wb['Sheet1']
 
-    border_thick = Side(border_style='thin')
+    border_thin = Side(border_style='thin')
+    all_border_thin = Border(left = border_thin, right = border_thin, top = border_thin, bottom = border_thin)
+    lines = df.index[-1]
 
-    for i in range(lines - 4, lines - 1):
+    for i in range(lines + 2, lines + 5):
         ws.merge_cells(start_row = i, start_column = 2, end_row = i, end_column = 8)
-        ws.cell(row = i, column = 1).border = Border(left = border_thick, right = border_thick, top = border_thick, bottom = border_thick)
+        ws.cell(row = i, column = 1).border = all_border_thin
         ws.cell(row = i, column = 1).font = Font(bold = True)
 
-    ws.cell(row = lines - 4, column = 1).value = "CMD"
-    ws.cell(row = lines - 3, column = 1).value = "일시"
-    ws.cell(row = lines - 2, column = 1).value = "비고"
-    ws.cell(row = lines - 4, column = 2).value = commandline
-    ws.cell(row = lines - 3, column = 2).value = date + ' ' + time
+    ws.cell(row = lines + 2, column = 1).value = "CMD"
+    ws.cell(row = lines + 3, column = 1).value = "일시"
+    ws.cell(row = lines + 4, column = 1).value = "비고"
+    ws.cell(row = lines + 2, column = 2).value = commandline
+    ws.cell(row = lines + 3, column = 2).value = date + ' ' + time
 
     for i in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
         for cell in range(len(ws[i])):
@@ -63,6 +78,12 @@ def iperfiling(filename, commandline) :
                     except:
                         continue
                     
+    for i in range(1, ws.max_row + 1):
+        for j in range(1, ws.max_column + 1):
+            ws.cell(row = i, column = j).border = all_border_thin
+    
+    ws.merge_cells(start_row = lines - 1, start_column = 2, end_row = lines - 1, end_column = 8)
+
     wb.save('results/' + filename + '.xlsx')
     os.makedirs('results/txt', exist_ok=True)
     shutil.move(filename + '.txt', 'results/txt')
@@ -77,23 +98,37 @@ def iperfiling_udp(filename, commandline) :
     fread = open(filename + '.txt', 'r', encoding='utf-8')
     fwrite = open(filename + '_' + 'temp.txt', 'w', encoding='utf-8')
 
-    fwrite.write("interval,sec,transfer,bytes,bitrate,bits/sec,total,remarks,empty1,empty2\n")
-    fread.seek(0)
-    lines = len(fread.readlines())
+    fwrite.write("interval,sec,transfer,bytes,bitrate,bits/sec,total,remarks\n")
     fread.seek(0)
 
-    for i, v in enumerate(fread.readlines()):
-        v = arrange(v)
-        if len(v) == 8:
-            fwrite.write(','.join(v[1:]) + '\n')
+    while(1):
+        v = fread.readline()
 
-        if i == lines - 4:
-            fwrite.write('interval,sec,transfer,bytes,bitrate,bits/sec,Jitter(ms),lost/total,loss,remarks\n')
+        if v.__contains__("sec"):
+            v = arrange(v)
+            fwrite.write(','.join(v[1:8]) + ',\n')
+        elif v.__contains__("- - -") or v.__contains__("---"):
+            fwrite.write('-,-,-,-,-,-,-,-\n')
+            fwrite.write("interval,sec,transfer,bytes,bitrate,bits/sec,jitter,remarks\n")
+            break        
+        elif v == "\n":
+            break
+        elif v == "":
+            sys.exit()
 
-        if v.__contains__('sender') or v.__contains__('receiver'):
-            v[10] = v[10].strip('()')
-            v.remove('ms')
-            fwrite.write(','.join(v[1:]) + '\n')
+    while(1):
+        v = fread.readline()
+
+        if v.__contains__("sender"):
+            v = arrange(v)
+            fwrite.write(','.join(v[1:8]) + ',sender\n')
+        elif v.__contains__("receiver"):
+            v = arrange(v)
+            fwrite.write(','.join(v[1:8]) + ',receiver\n')
+        elif v == "\n":
+            break
+        elif v == "":
+            break
             
     fwrite.close()
     fread.close()
@@ -105,20 +140,22 @@ def iperfiling_udp(filename, commandline) :
     wb = load_workbook(filename + '.xlsx', data_only=True)
     ws = wb['Sheet1']
 
-    border_thick = Side(border_style='thin')
+    border_thin = Side(border_style='thin')
+    all_border_thin = Border(left = border_thin, right = border_thin, top = border_thin, bottom = border_thin)
+    lines = df.index[-1]
 
-    for i in range(lines - 4, lines - 1):
-        ws.merge_cells(start_row = i, start_column = 2, end_row = i, end_column = 11)
-        ws.cell(row = i, column = 1).border = Border(left = border_thick, right = border_thick, top = border_thick, bottom = border_thick)
+    for i in range(lines + 2, lines + 5):
+        ws.merge_cells(start_row = i, start_column = 2, end_row = i, end_column = 9)
+        ws.cell(row = i, column = 1).border = all_border_thin
         ws.cell(row = i, column = 1).font = Font(bold = True)
 
-    ws.cell(row = lines - 4, column = 1).value = "CMD"
-    ws.cell(row = lines - 3, column = 1).value = "일시"
-    ws.cell(row = lines - 2, column = 1).value = "비고"
-    ws.cell(row = lines - 4, column = 2).value = commandline
-    ws.cell(row = lines - 3, column = 2).value = date + ' ' + time
+    ws.cell(row = lines + 2, column = 1).value = "CMD"
+    ws.cell(row = lines + 3, column = 1).value = "일시"
+    ws.cell(row = lines + 4, column = 1).value = "비고"
+    ws.cell(row = lines + 2, column = 2).value = commandline
+    ws.cell(row = lines + 3, column = 2).value = date + ' ' + time
 
-    for i in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K']:
+    for i in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']:
         for cell in range(len(ws[i])):
             ws[i + str(cell + 1)].alignment = Alignment(horizontal = 'center')
             if type(ws[i + str(cell + 1)].value) == str:
@@ -130,6 +167,12 @@ def iperfiling_udp(filename, commandline) :
                     except:
                         continue
 
+    for i in range(1, ws.max_row + 1):
+        for j in range(1, ws.max_column + 1):
+            ws.cell(row = i, column = j).border = all_border_thin
+    
+    ws.merge_cells(start_row = lines - 2, start_column = 2, end_row = lines - 2, end_column = 9)
+
     wb.save('results/' + filename + '.xlsx')
     os.makedirs('results/txt', exist_ok=True)
     shutil.move(filename + '.txt', 'results/txt')
@@ -137,7 +180,13 @@ def iperfiling_udp(filename, commandline) :
     os.remove(filename + '.xlsx')
 
 def arrange(line):
-    return line.replace('[', '').replace(']', '').split()
+    try : 
+        result = line.replace('[', '').replace(']', '').split()
+    
+    except:
+        result = ['NaN' for _ in range(10)]
+    
+    return result
 
 if __name__ == "__main__":
     iperfiling("test", commandline="iperf -c localhost -t 5")
