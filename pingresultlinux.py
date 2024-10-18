@@ -15,7 +15,6 @@ def pingfilinglinux(filename, commandline):
     fwrite = open(filename + '_' + 'temp.txt', 'w', encoding='utf-8')
 
     fwrite.write("time(ms),-,--\n")
-    fread.seek(0)
 
     while(1):
         v = fread.readline()

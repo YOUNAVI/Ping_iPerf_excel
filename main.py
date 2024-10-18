@@ -32,7 +32,11 @@ if __name__ == '__main__':
         else:
             data = subprocess.Popen(command_list, stdout=subprocess.PIPE, encoding='euc-kr')
 
-        f = open(filename + ".txt", 'w', encoding="utf-8")
+        if command_line.__contains__("iperf3 -s"):
+            print(f"filesaved: iperf3_server.txt\n")
+            f = open(f"iperf3_server.txt", 'w', encoding = "utf-8")
+        else:
+            f = open(filename + ".txt", 'w', encoding="utf-8")
         f.write(command_line)
         while data.poll() == None:
             out = data.stdout.readline()
@@ -44,7 +48,6 @@ if __name__ == '__main__':
         if command_list[0] == 'ping':
             if platform.system() == 'Windows':
                 pingfiling(filename = filename, commandline = command_line)
-
             elif platform.system() == 'Linux':
                 pingfilinglinux(filename = filename, commandline = command_line)
         elif command_list[0] == 'iperf3' or command_list[0] == 'iperf':
@@ -52,7 +55,7 @@ if __name__ == '__main__':
                 if platform.system() == 'Windows':
                     iperfiling_udp(filename = filename, commandline = command_line)
                 elif platform.system() == 'Linux':
-                    iperfilinglinux_udp(filename = filename, commandline = command_line)
+                    iperfilinglinux_udp(filename = filename, commandline = command_line)    
             else:
                 if platform.system() == 'Windows':
                     iperfiling(filename = filename, commandline = command_line)

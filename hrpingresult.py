@@ -15,8 +15,6 @@ def hrpingfiling(filename, commandline):
     fwrite = open(filename + '_' + 'temp.txt', 'w', encoding='utf-8')
 
     fwrite.write("time(ms),remarks,-,--\n")
-    fread.seek(0)
-    fread.seek(0)
 
     while(1):
         v = fread.readline()
@@ -126,9 +124,6 @@ def arrange(line):
         result = ["0", "0", "0", "0"]
 
     return result
-
-    
-
 
 if __name__ == "__main__":
     hrpingfiling("test", commandline="ping google.com -n 10 -s 1000")
